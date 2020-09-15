@@ -1,0 +1,5 @@
+pytest==5.3.2
+flake8==3.8.2
+pytest-cov==2.9.0
+sphinx==3.2.1
+sphinxcontrib-napoleon==0.7

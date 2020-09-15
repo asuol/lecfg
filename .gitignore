@@ -2,3 +2,5 @@
 .env
 .coverage*
 **/*.pyc
+docs/build/**
+docs/build
