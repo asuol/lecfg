@@ -44,9 +44,31 @@ class ConfParser():
         FileNotFoundException
             if the given file path does not exist
         """
-        self.file_path = file_path
-        self.conf_file = open(file_path, "r")
-        self.line_num = 0
+        self._file_path = file_path
+        self._conf_file = open(file_path, "r")
+        self._line_num = 0
+
+    @property
+    def file_path(self) -> str:
+        """
+        Configuration file path
+        """
+        return self._file_path
+
+    @file_path.setter
+    def file_path(self, value) -> None:
+        self._file_path = value
+
+    @property
+    def line_num(self) -> int:
+        """
+        Return the current file number
+        """
+        return self._line_num
+
+    @line_num.setter
+    def line_num(self, value) -> None:
+        self._line_num = value
 
     def lines(self) -> str:
         """
@@ -57,22 +79,11 @@ class ConfParser():
         str
             the next line from the configuration file
         """
-        for line_num, line in enumerate(self.conf_file):
+        for line_num, line in enumerate(self._conf_file):
             # ignore empty lines and comments
             if line.isspace() or line.lstrip().startswith("#"):
                 continue
-            self.line_num = line_num
+            self._line_num = line_num
             yield list(map(lambda l: l.strip(), line.split('|')))
 
-        self.conf_file.close()
-
-#    @property
-#    def file_path(self) -> str:
-#        """
-#        Configuration file path
-#        """
-#        return self.file_path
-#
-#    @file_path.setter
-#    def file_path(self, value) -> None:
-#        self.file_path = value
+        self._conf_file.close()

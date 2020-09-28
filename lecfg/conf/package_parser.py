@@ -70,8 +70,8 @@ class PackageParser(ConfParser):
         except FileNotFoundError:
             raise ConfException(self._readme_file_path(package_dir_path),
                                 README_FILE_NOT_FOUND)
-        self.package_dir_path = package_dir_path
-        self.system_name = system_name
+        self._package_dir_path = package_dir_path
+        self._system_name = system_name
 
     def configurations(self) -> Conf:
         """
@@ -90,10 +90,10 @@ class PackageParser(ConfParser):
                            (PACKAGE_CONF_FIELD_COUNT,
                             package_conf_field_count))
 
-                raise ConfException(self.package_dir_path, message,
+                raise ConfException(self._package_dir_path, message,
                                     self.line_num)
 
-            src_path = package_conf[0]
+            src_path = os.path.join(self._package_dir_path, package_conf[0])
             version = package_conf[1]
             system_list = package_conf[2]
             dest_path = package_conf[3]
@@ -101,7 +101,7 @@ class PackageParser(ConfParser):
 
             if(system_list.strip() == "-"
                or
-               self.system_name in system_list
+               self._system_name in system_list
                ):
                 yield Conf(src_path, dest_path, description, version)
 

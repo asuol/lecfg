@@ -24,6 +24,8 @@
 # SOFTWARE.
 ###
 
+import os
+
 
 class Conf():
     """
@@ -48,7 +50,7 @@ class Conf():
             applies
         """
         self._src_path = src_path
-        self._dest_path = dest_path
+        self._dest_path = os.path.expanduser(dest_path)
         self._description = description
         self._version = version
 
