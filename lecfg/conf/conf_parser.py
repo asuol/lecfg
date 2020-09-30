@@ -30,7 +30,7 @@ class ConfParser():
     Configuration parser
     """
 
-    def __init__(self, file_path: str):
+    def __init__(self, file_path: str, first_line: int = 0):
         """
         Constructor
 
@@ -38,6 +38,8 @@ class ConfParser():
         ----------
         file_path: str
             configuration file path
+        first_line: int
+            first line of the file. Ignore all previous lines
 
         Raises
         ------
@@ -46,7 +48,7 @@ class ConfParser():
         """
         self._file_path = file_path
         self._conf_file = open(file_path, "r")
-        self._line_num = 0
+        self._first_line = first_line
 
     @property
     def file_path(self) -> str:
@@ -79,6 +81,10 @@ class ConfParser():
         str
             the next line from the configuration file
         """
+        for i in range(self._first_line):
+            # skip lines until the first line
+            self._conf_file.readline()
+
         for line_num, line in enumerate(self._conf_file):
             # ignore empty lines and comments
             if line.isspace() or line.lstrip().startswith("#"):

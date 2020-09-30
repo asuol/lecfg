@@ -48,7 +48,8 @@ class PackageParser(ConfParser):
     Parser class for package README files
     """
 
-    def __init__(self, package_dir_path: str, system_name: str):
+    def __init__(self, package_dir_path: str, system_name: str,
+                 first_line: int = 0):
         """
         Constructor
 
@@ -58,15 +59,18 @@ class PackageParser(ConfParser):
             path to the package directory
         system_name: str
             name of the system where lecfg is running
+        first_line: int
+            first line of the file. Ignore all previous lines
+
         Raises
         ------
         ConfException
             Raised if the provided package directory does not have a README
             file
         """
-
         try:
-            super().__init__(self._readme_file_path(package_dir_path))
+            super().__init__(self._readme_file_path(package_dir_path),
+                             first_line)
         except FileNotFoundError:
             raise ConfException(self._readme_file_path(package_dir_path),
                                 README_FILE_NOT_FOUND)

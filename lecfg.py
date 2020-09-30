@@ -28,6 +28,7 @@ from lecfg.conf.systems_parser import SystemsParser
 from lecfg.conf.package_parser import PackageParser
 from lecfg.conf.conf_exception import ConfException
 from lecfg.session_manager import SessionManager
+from lecfg.session import Session
 from lecfg.conf.conf import Conf
 from lecfg.action.read_src_action import ReadSrcAction
 from lecfg.action.read_dest_action import ReadDestAction
@@ -51,6 +52,7 @@ class ExitCode(Enum):
     SYSTEMS_FILE_NOT_FOUND = 1
     EMPTY_SYSTEMS_FILE = 2
     README_FILE_NOT_FOUND = 3
+    ACTION_ERROR = 4
 
 
 class Lecfg():
@@ -144,7 +146,7 @@ class Lecfg():
                     system_count)
 
     def _save_and_exit(self, package_name: str, line_num: int,
-                       exit_code: int = ExitCode.SAVE_AND_EXIT) -> None:
+                       exit_code: int = ExitCode.SAVE_AND_EXIT.value) -> None:
         """
         Save the current progress and exit
 
@@ -165,9 +167,9 @@ class Lecfg():
 
         exit(exit_code)
 
-    def _error_save_and_quit(self, package_name: str, package_readme_path: str,
-                             line_num: int, error_msg: str,
-                             exit_code: int) -> None:
+    def _error_save_and_quit(self, package_name: str, error_msg: str,
+                             exit_code: int,
+                             package: PackageParser = None) -> None:
         """
         Print error, save the current progress and exit
 
@@ -175,21 +177,24 @@ class Lecfg():
         ----------
         package_name: str
             name of the package being processed
-        package_readme_path: str
-            path to the current package README file
-        line_num: int
-            current line number in the given package README file
         error_msg: str
             error message
         exit_code: int
             exit code to return while exiting lecfg
+        package: PackageParser
+            package parser object
 
         Returns
         -------
         None
         """
-        print("Error while processing file \"%s\" at line %d: %s" %
-              (package_readme_path, line_num, error_msg))
+        if package is not None:
+            line_num = package.line_num
+            print("Error while processing file \"%s\" at line %d: %s" %
+                  (package.file_path, line_num, error_msg))
+        else:
+            print(error_msg)
+            line_num = None
         print("The current state has been saved to and once you correct the "
               "error lecfg will resume from this point")
 
@@ -243,30 +248,44 @@ class Lecfg():
         return options[selection - 1].run(conf)
 
     def _process_package(self, package_dir: str, current_system: str,
-                         previous_session: str) -> None:
+                         previous_session: Session) -> None:
         """
         Process a package directory
 
         Parameters
         ----------
         package_dir: str
-            path to the current package directory
+            path to the current package directory. It acts as the package name
         current_system: str
             name of the current system
-        previous_session: str
-            path to a previous session file or None if there is no previous
+        previous_session: Session
+            previous session or None if there is no previous
             session
 
         Returns
         -------
         None
         """
+        if (previous_session is not None
+           and previous_session.package_dir != package_dir):
+            # we are resuming a previous session and this is not the package we
+            # left on
+            print("Resuming previous session ... skipping [ %s ]..." %
+                  package_dir)
+            return
+
         print("Processing [ %s ]\n" % package_dir)
 
         try:
-            package = PackageParser(package_dir, current_system)
+            if previous_session is not None:
+                package = PackageParser(package_dir, current_system,
+                                        previous_session.line_num)
+            else:
+                package = PackageParser(package_dir, current_system)
         except ConfException as e:
-            self.error_save_and_exit(e, ExitCode.README_FILE_NOT_FOUND.value)
+            error_msg = "Error creating package parser: %s" % str(e)
+            self._error_save_and_quit(package_dir, error_msg,
+                                      ExitCode.README_FILE_NOT_FOUND.value)
 
         try:
             for conf in package.configurations():
@@ -286,8 +305,8 @@ class Lecfg():
                 if result is ActionResult.SAVE_AND_EXIT:
                     self._save_and_exit(package_dir, package.line_num)
         except ActionException as e:
-            print(str(e))
-            # TODO: save and exit
+            self._error_save_and_quit(package_dir, str(e),
+                                      ExitCode.ACTION_ERROR.value, package)
 
     def process(self) -> None:
         """

@@ -25,6 +25,7 @@
 ###
 
 from datetime import datetime
+from lecfg.session import Session
 from pathlib import Path
 
 SAVE_FILE_SUFFIX = "_lecfg.sav"
@@ -46,9 +47,18 @@ class SessionManager():
         """
         self._work_dir_path = work_dir_path
 
-    def get_previous_session(self):
-        previous_sessions = Path(self._work_dir_path).glob(
-            "*%s" % SAVE_FILE_SUFFIX)
+    def get_previous_session(self) -> Session:
+        """
+        Get the previous session. If multiple sessions exist let the user
+        select.
+
+        Returns
+        -------
+        Session
+            Return the previous session or None if none exists
+        """
+        previous_sessions = list(Path(self._work_dir_path).glob(
+            "*%s" % SAVE_FILE_SUFFIX))
         session_count = len(previous_sessions)
 
         if session_count > 1:
@@ -64,7 +74,7 @@ class SessionManager():
                     assert (selection >= 0 and
                             selection < session_count)
 
-                    return previous_sessions[selection]
+                    return Session(str(previous_sessions[selection]))
                 except ValueError:
                     self._print_error("Please introduce a number")
                 except AssertionError:
@@ -73,11 +83,26 @@ class SessionManager():
                         session_count)
 
         if session_count == 1:
-            return previous_sessions[0]
+            return Session(str(previous_sessions[0]))
 
         return None
 
-    def save_session(self, package_name: str, line_num: int):
+    def save_session(self, package_name: str, line_num: int) -> None:
+        """
+        Save current session to resume later
+
+        Parameters
+        ----------
+        package_name: str
+            name of the package being processed
+        line_num: int
+            current line number in the given package README file
+
+        Returns
+        -------
+        None
+        """
+
         file_name = datetime.utcnow().strftime("%d-%m-%Y_%H-%M")
         file_name += SAVE_FILE_SUFFIX
 

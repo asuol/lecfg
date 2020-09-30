@@ -43,6 +43,8 @@ class Session():
         ------
         FileNotFoundException
             if the given file path does not exist
+        AssertionError
+            if the session file format is invalid
         """
         self._file_path = file_path
 
@@ -50,19 +52,21 @@ class Session():
             fields = list(map(lambda l: l.strip(),
                               session_file.readline().split(",")))
 
-            self._package_name = fields[0]
-            self._line_num = fields[1]
+            assert len(fields) > 1 and len(fields) <= 2, (
+                "Invalid session file format")
+
+            self._package_dir = fields[0]
+            if len(fields) > 1:
+                self._line_num = int(fields[1])
+            else:
+                self._line_num = None
 
     @property
-    def package_name(self) -> str:
+    def package_dir(self) -> str:
         """
-        Package name where to resume
+        Package dir path where to resume
         """
-        return self._package_name
-
-    @package_name.setter
-    def package_name(self, value) -> None:
-        self._package_name = value
+        return self._package_dir
 
     @property
     def line_num(self) -> int:
@@ -70,7 +74,3 @@ class Session():
         Line number where to resume
         """
         return self._line_num
-
-    @line_num.setter
-    def line_num(self, value) -> None:
-        self._line_num = value
