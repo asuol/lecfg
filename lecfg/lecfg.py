@@ -43,7 +43,6 @@ from lecfg.action.action_exception import ActionException
 from pathlib import Path
 from enum import Enum
 from typing import List
-import argparse
 import os
 
 
@@ -303,7 +302,7 @@ class Lecfg():
                         break
 
                 if result is ActionResult.SAVE_AND_EXIT:
-                    self._save_and_exit(package_dir, package.line_num)
+                    self._save_and_quit(package_dir, package.line_num)
         except ActionException as e:
             self._error_save_and_quit(package_dir, str(e),
                                       ExitCode.ACTION_ERROR.value, package)
@@ -329,7 +328,8 @@ class Lecfg():
         try:
             sys_parser = SystemsParser(self.work_dir)
         except ConfException as e:
-            self._error_save_and_exit(e, ExitCode.SYSTEMS_FILE_NOT_FOUND.value)
+            print(str(e))
+            exit(ExitCode.SYSTEMS_FILE_NOT_FOUND)
 
         current_system = self._select_system(sys_parser)
         print("\nCurrent system: [ %s ]" % current_system)
@@ -351,31 +351,3 @@ class Lecfg():
             self._process_package(package_dir, current_system, prev_session)
 
         print("\n<<<<<<<<<<<<<<<<<<<<<LeCFG END<<<<<<<<<<<<<<<<<<<<<\n")
-
-
-if __name__ == '__main__':
-    arg_parser = argparse.ArgumentParser()
-    arg_parser.add_argument("-y, --replace-all", help="Assume \"Replace\" as"
-                            " the answer for all questions regarding existing"
-                            " configuration in the current system"
-                            " configuration with a symbolic link",
-                            action="store_true")
-    arg_parser.add_argument("-n, --dry-run", help="Do a dry-run to ensure that"
-                            " all the README.lc files are valid. Despite this"
-                            " option, whenever the tool finds an error it"
-                            " saves the current state while you correct the"
-                            " detected problem and resumes where it left off"
-                            " next time you load it.", action="store_true")
-    arg_parser.add_argument("work_dir", help="Working directory from"
-                            " which the script operates (defaults to the"
-                            " current directory)", type=str)
-    arg_parser.add_argument("-c, --checksum", help="Calculate SHA-512 hash of"
-                            " the provided work directory and request"
-                            " the user to confirm if the calculated hash is"
-                            " the expected", action="store_true")
-
-    args = arg_parser.parse_args()
-
-    lecfg = Lecfg(args.work_dir)
-
-    lecfg.process()
