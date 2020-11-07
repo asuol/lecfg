@@ -87,14 +87,14 @@ class SessionManager():
 
         return None
 
-    def save_session(self, package_name: str, line_num: int) -> None:
+    def save_session(self, package_dir: str, line_num: int) -> None:
         """
         Save current session to resume later
 
         Parameters
         ----------
-        package_name: str
-            name of the package being processed
+        package_dir: str
+            package directory path being processed
         line_num: int
             current line number in the given package README file
 
@@ -109,4 +109,4 @@ class SessionManager():
         save_file_path = str(Path(self._work_dir_path) / file_name)
 
         with open(save_file_path, "w") as save_file:
-            save_file.write(package_name + "," + str(line_num))
+            save_file.write(package_dir + "," + str(line_num))

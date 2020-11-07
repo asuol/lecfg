@@ -121,7 +121,7 @@ class Lecfg():
             return sys_parser.systems[0]
         elif system_count == 0:
             print("Systems file \"%s\" is empty! Please indicate at least the "
-                  "name of one system" % sys_parser.get_file_path())
+                  "name of one system" % sys_parser.file_path)
             exit(ExitCode.EMPTY_SYSTEMS_FILE.value)
 
         while True:
@@ -129,19 +129,19 @@ class Lecfg():
                 print("Select the current system:\n")
 
                 for i, s in enumerate(sys_parser.systems):
-                    print("[%d] %s" % (i, s))
+                    print("[%d] %s" % (i + 1, s))
 
                 selection = int(input("\n> "))
 
-                assert (selection >= 0 and
-                        selection < system_count)
+                assert (selection >= 1 and
+                        selection <= system_count)
 
-                return sys_parser.systems[selection]
+                return sys_parser.systems[selection - 1]
             except ValueError:
                 self._print_error("Please introduce a number")
             except AssertionError:
                 self._print_error(
-                    "Please introduce a number between 0 and %d!" %
+                    "Please introduce a number between 1 and %d!" %
                     system_count)
 
     def _save_and_exit(self, package_name: str, line_num: int,
@@ -220,12 +220,13 @@ class Lecfg():
 
         while True:
             try:
-                print("\n\n\n[Configuration summary]")
+                print("Handling configuration file:\n")
+                print("* Source path [src]:       %s" % conf.src_path)
+                print("* Destination path [dest]: %s\n" % conf.dest_path)
+
                 if conf.description is not None:
-                    print("* Description:          %s" % conf.description)
-                print("* File location:        %s" % conf.src_path)
-                print("* Configuration target: %s" % conf.dest_path)
-                print("* Applies to versions:  %s\n" % conf.version)
+                    print("* Description:             %s" % conf.description)
+                print("* Applies to versions:     %s\n" % conf.version)
 
                 print(question + "\n")
 
@@ -273,7 +274,7 @@ class Lecfg():
                   package_dir)
             return
 
-        print("Processing [ %s ]\n" % package_dir)
+        print("Processing package directory: [ %s ]\n" % package_dir)
 
         try:
             if previous_session is not None:
@@ -329,7 +330,7 @@ class Lecfg():
             sys_parser = SystemsParser(self.work_dir)
         except ConfException as e:
             print(str(e))
-            exit(ExitCode.SYSTEMS_FILE_NOT_FOUND)
+            exit(ExitCode.SYSTEMS_FILE_NOT_FOUND.value)
 
         current_system = self._select_system(sys_parser)
         print("\nCurrent system: [ %s ]" % current_system)
