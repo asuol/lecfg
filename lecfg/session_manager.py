@@ -27,6 +27,7 @@
 from datetime import datetime
 from lecfg.session import Session
 from pathlib import Path
+from lecfg.utilities import user_input
 
 SAVE_FILE_SUFFIX = "_lecfg.sav"
 
@@ -62,25 +63,11 @@ class SessionManager():
         session_count = len(previous_sessions)
 
         if session_count > 1:
-            while True:
-                try:
-                    print("Multiple sessions available. Please select one:")
+            question = ["Multiple sessions available. Please select one:"]
 
-                    for i, session in enumerate(previous_sessions):
-                        print("[%d] %s" % (i, session))
+            selection = user_input(question, previous_sessions)
 
-                    selection = int(input("\n> "))
-
-                    assert (selection >= 0 and
-                            selection < session_count)
-
-                    return Session(str(previous_sessions[selection]))
-                except ValueError:
-                    self._print_error("Please introduce a number")
-                except AssertionError:
-                    self._print_error(
-                        "Please introduce a number between 0 and %d!" %
-                        session_count)
+            return Session(str(previous_sessions[selection]))
 
         if session_count == 1:
             return Session(str(previous_sessions[0]))

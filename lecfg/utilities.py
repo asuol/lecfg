@@ -24,52 +24,45 @@
 # SOFTWARE.
 ###
 
-import os
+from typing import List
 
 
-class Session():
+def user_input(question: List[str], options: List[str]) -> int:
+    option_count = len(options)
+
+    while True:
+        try:
+            for q in question:
+                print(q)
+
+            for i, o in enumerate(options):
+                print("[%d] %s" % (i + 1, o))
+
+            selection = int(input("\n> "))
+
+            assert (selection >= 1 and
+                    selection <= option_count)
+
+            return selection - 1
+        except ValueError:
+            print_error("Please introduce a number")
+        except AssertionError:
+            print_error(
+                "Please introduce a number between 1 and %d!" %
+                option_count)
+
+
+def print_error(msg: str) -> None:
     """
-    LeCfg session
+    Print error message
+
+    Parameters
+    ----------
+    msg: str
+        error message
+
+    Returns
+    -------
+    None
     """
-
-    def __init__(self, file_path: str):
-        """
-        Constructor
-
-        Parameters
-        ----------
-        file_path: str
-            session file path
-
-        Raises
-        ------
-        FileNotFoundException
-            if the given file path does not exist
-        AssertionError
-            if the session file format is invalid
-        """
-        with open(file_path, "r") as session_file:
-            fields = list(map(lambda l: l.strip(),
-                              session_file.readline().split(",")))
-
-            assert len(fields) > 1 and len(fields) <= 2, (
-                "Invalid session file format")
-
-            self._package_dir = fields[0]
-            self._line_num = int(fields[1])
-
-        os.remove(file_path)
-
-    @property
-    def package_dir(self) -> str:
-        """
-        Package dir path where to resume
-        """
-        return self._package_dir
-
-    @property
-    def line_num(self) -> int:
-        """
-        Line number where to resume
-        """
-        return self._line_num
+    print("\n** %s\n\n" % msg)

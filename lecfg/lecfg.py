@@ -40,6 +40,7 @@ from lecfg.action.compare_action import CompareAction
 from lecfg.action.action_result import ActionResult
 from lecfg.action.action import Action
 from lecfg.action.action_exception import ActionException
+from lecfg.utilities import user_input
 from pathlib import Path
 from enum import Enum
 from typing import List
@@ -87,21 +88,6 @@ class Lecfg():
         self.work_dir = work_dir
         self._session_man = SessionManager(work_dir)
 
-    def _print_error(self, msg: str) -> None:
-        """
-        Print error message
-
-        Parameters
-        ----------
-        msg: str
-            error message
-
-        Returns
-        -------
-        None
-        """
-        print("\n** %s\n\n" % msg)
-
     def _select_system(self, sys_parser: SystemsParser) -> str:
         """
         Select the name of current system
@@ -124,25 +110,11 @@ class Lecfg():
                   "name of one system" % sys_parser.file_path)
             exit(ExitCode.EMPTY_SYSTEMS_FILE.value)
 
-        while True:
-            try:
-                print("Select the current system:\n")
+        question = ["Select the current system:\n"]
 
-                for i, s in enumerate(sys_parser.systems):
-                    print("[%d] %s" % (i + 1, s))
+        selection = user_input(question, sys_parser.systems)
 
-                selection = int(input("\n> "))
-
-                assert (selection >= 1 and
-                        selection <= system_count)
-
-                return sys_parser.systems[selection - 1]
-            except ValueError:
-                self._print_error("Please introduce a number")
-            except AssertionError:
-                self._print_error(
-                    "Please introduce a number between 1 and %d!" %
-                    system_count)
+        return sys_parser.systems[selection]
 
     def _save_and_exit(self, package_name: str, line_num: int,
                        exit_code: int = ExitCode.SAVE_AND_EXIT.value) -> None:
@@ -166,7 +138,7 @@ class Lecfg():
 
         exit(exit_code)
 
-    def _error_save_and_quit(self, package_name: str, error_msg: str,
+    def _error_save_and_exit(self, package_name: str, error_msg: str,
                              exit_code: int,
                              package: PackageParser = None) -> None:
         """
@@ -216,36 +188,20 @@ class Lecfg():
         -------
         None
         """
-        option_count = len(options)
+        query = []
+        query.append("Handling configuration file:\n")
+        query.append("* Source path [src]:       %s" % conf.src_path)
+        query.append("* Destination path [dest]: %s\n" % conf.dest_path)
 
-        while True:
-            try:
-                print("Handling configuration file:\n")
-                print("* Source path [src]:       %s" % conf.src_path)
-                print("* Destination path [dest]: %s\n" % conf.dest_path)
+        if conf.description is not None:
+            query.append("* Description:             %s" % conf.description)
 
-                if conf.description is not None:
-                    print("* Description:             %s" % conf.description)
-                print("* Applies to versions:     %s\n" % conf.version)
+        query.append("* Applies to versions:     %s\n" % conf.version)
+        query.append(question + "\n")
 
-                print(question + "\n")
+        selection = user_input(query, options)
 
-                print(" ".join([str(opt) for opt in options]))
-
-                selection = int(input("\n> "))
-
-                assert (selection >= 1 and
-                        selection <= option_count)
-
-                break
-            except ValueError:
-                self._print_error("Please introduce a number")
-            except AssertionError:
-                self._print_error(
-                    "Please introduce a number between 1 and %d!" %
-                    option_count)
-
-        return options[selection - 1].run(conf)
+        return options[selection].run(conf)
 
     def _process_package(self, package_dir: str, current_system: str,
                          previous_session: Session) -> None:
@@ -284,7 +240,7 @@ class Lecfg():
                 package = PackageParser(package_dir, current_system)
         except ConfException as e:
             error_msg = "Error creating package parser: %s" % str(e)
-            self._error_save_and_quit(package_dir, error_msg,
+            self._error_save_and_exit(package_dir, error_msg,
                                       ExitCode.README_FILE_NOT_FOUND.value)
 
         try:
@@ -303,9 +259,9 @@ class Lecfg():
                         break
 
                 if result is ActionResult.SAVE_AND_EXIT:
-                    self._save_and_quit(package_dir, package.line_num)
+                    self._save_and_exit(package_dir, package.line_num)
         except ActionException as e:
-            self._error_save_and_quit(package_dir, str(e),
+            self._error_save_and_exit(package_dir, str(e),
                                       ExitCode.ACTION_ERROR.value, package)
 
     def process(self) -> None:
