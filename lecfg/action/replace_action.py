@@ -41,7 +41,7 @@ class ReplaceAction(DeployAction):
     while keeping the existing configuration
     """
 
-    def __init__(self, name: str, number: int):
+    def __init__(self, name: str):
         """
         Constructor
 
@@ -49,10 +49,8 @@ class ReplaceAction(DeployAction):
         ----------
         name: str
             name of the action
-        number: int
-            number of the action
         """
-        super().__init__(name, number)
+        super().__init__(name)
 
     def run(self, conf: Conf) -> ActionResult:
         dest_path = Path(conf.dest_path)

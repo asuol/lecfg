@@ -25,6 +25,7 @@
 ###
 
 from typing import List
+from lecfg.exit_code import ExitCode
 
 
 def user_input(question: List[str], options: List[str]) -> int:
@@ -50,6 +51,9 @@ def user_input(question: List[str], options: List[str]) -> int:
             print_error(
                 "Please introduce a number between 1 and %d!" %
                 option_count)
+        except (EOFError, KeyboardInterrupt):
+            # if the user issued a CTRL-D or CTRL-C
+            exit(ExitCode.USER_INTERRUPT.value)
 
 
 def print_error(msg: str) -> None:

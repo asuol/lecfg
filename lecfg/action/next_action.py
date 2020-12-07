@@ -35,7 +35,7 @@ class NextAction(Action):
     Action to move to the next package configuration
     """
 
-    def __init__(self, name: str, number: int):
+    def __init__(self, name: str):
         """
         Constructor
 
@@ -43,10 +43,9 @@ class NextAction(Action):
         ----------
         name: str
             name of the action
-        number: int
-            number of the action
         """
-        super().__init__(name, number)
+        super().__init__(name)
 
     def run(self, conf: Conf) -> ActionResult:
+        super().print_action_outcome("Moving on to the next configuration...")
         return ActionResult.NEXT

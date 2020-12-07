@@ -36,7 +36,7 @@ class DeployAction(Action):
     Action to deploy the src configuration file into the dest path
     """
 
-    def __init__(self, name: str, number: int):
+    def __init__(self, name: str):
         """
         Constructor
 
@@ -44,10 +44,8 @@ class DeployAction(Action):
         ----------
         name: str
             name of the action
-        number: int
-            number of the action
         """
-        super().__init__(name, number)
+        super().__init__(name)
 
     def _deploy_conf(self, src_path: str, dest_path: str) -> ActionResult:
         Path(dest_path).symlink_to(src_path)

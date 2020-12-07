@@ -32,7 +32,7 @@ class Session():
     LeCfg session
     """
 
-    def __init__(self, file_path: str):
+    def __init__(self, file_path: str, work_dir_path: str):
         """
         Constructor
 
@@ -40,13 +40,16 @@ class Session():
         ----------
         file_path: str
             session file path
+        work_dir_path: str
+            path to the work directory
 
         Raises
         ------
         FileNotFoundException
             if the given file path does not exist
         AssertionError
-            if the session file format is invalid
+            if the session file format is invalid or if the package dir path
+            does not exist or is not within the current work directory
         """
         with open(file_path, "r") as session_file:
             fields = list(map(lambda l: l.strip(),
@@ -56,6 +59,10 @@ class Session():
                 "Invalid session file format")
 
             self._package_dir = fields[0]
+
+            assert self._package_dir.startswith(work_dir_path) is True
+            assert os.path.isdir(self._package_dir) is True
+
             self._line_num = int(fields[1])
 
         os.remove(file_path)

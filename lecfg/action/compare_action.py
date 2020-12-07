@@ -37,7 +37,7 @@ class CompareAction(Action):
     Action to call diff utility to compare the src and dest configuration files
     """
 
-    def __init__(self, name: str, number: int, action_cmd: str):
+    def __init__(self, name: str, action_cmd: str):
         """
         Constructor
 
@@ -45,12 +45,10 @@ class CompareAction(Action):
         ----------
         name: str
             name of the action
-        number: int
-            number of the action
         action_cmd: str
             system command to open a file reader when the this action is run
         """
-        super().__init__(name, number)
+        super().__init__(name)
         self.action_cmd = action_cmd
 
     def run(self, conf: Conf) -> ActionResult:
@@ -61,5 +59,5 @@ class CompareAction(Action):
             raise ActionException(e.cmd, e.returncode,
                                   e.stderr.decode('ascii'))
 
-        # repeat the question after the edit
+        # repeat the question after the comparison
         return ActionResult.REPEAT

@@ -62,15 +62,30 @@ class SessionManager():
             "*%s" % SAVE_FILE_SUFFIX))
         session_count = len(previous_sessions)
 
+        if session_count > 0:
+            question = []
+            question.append("\nThere is at least one previously saved session")
+            question.append("\nDo you want to resume?\n")
+
+            options = []
+            options.append("Yes")
+            options.append("No")
+
+            selection = user_input(question, options)
+
+            if selection == 1:
+                return None
+
         if session_count > 1:
             question = ["Multiple sessions available. Please select one:"]
 
             selection = user_input(question, previous_sessions)
 
-            return Session(str(previous_sessions[selection]))
+            return Session(str(previous_sessions[selection]),
+                           self._work_dir_path)
 
         if session_count == 1:
-            return Session(str(previous_sessions[0]))
+            return Session(str(previous_sessions[0]), self._work_dir_path)
 
         return None
 

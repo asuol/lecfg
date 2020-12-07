@@ -37,7 +37,7 @@ class ReadSrcAction(Action):
     Action to call file reader on the src configuration file
     """
 
-    def __init__(self, name: str, number: int, action_cmd: str):
+    def __init__(self, name: str, action_cmd: str):
         """
         Constructor
 
@@ -45,12 +45,10 @@ class ReadSrcAction(Action):
         ----------
         name: str
             name of the action
-        number: int
-            number of the action
         action_cmd: str
             system command to open a file reader when the this action is run
         """
-        super().__init__(name, number)
+        super().__init__(name)
         self.action_cmd = action_cmd
 
     def _read_file(self, file_path: str):

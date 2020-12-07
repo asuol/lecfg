@@ -24,46 +24,13 @@
 # SOFTWARE.
 ###
 
-
-from lecfg.action.action_result import ActionResult
-from lecfg.conf.conf import Conf
-from abc import ABC
+from enum import Enum
 
 
-class Action(ABC):
-    """
-    Action abstract class
-    """
-
-    def __init__(self, name: str):
-        """
-        Constructor
-
-        Parameters
-        ----------
-        name: str
-            name of the action
-        """
-        self._name = name
-
-    def __str__(self) -> str:
-        return "%s" % (self._name)
-
-    def run(self, conf: Conf) -> ActionResult:
-        """
-        Run action (abstract method)
-
-        Parameters
-        ----------
-        conf: Conf
-            Configuration object under processing
-
-        Returns
-        -------
-        ActionResult
-            user decision on the action
-        """
-        pass
-
-    def print_action_outcome(self, outcome: str) -> None:
-        print("\n%s\n" % outcome)
+class ExitCode(Enum):
+    SAVE_AND_EXIT = 0
+    SYSTEMS_FILE_NOT_FOUND = 1
+    EMPTY_SYSTEMS_FILE = 2
+    README_FILE_NOT_FOUND = 3
+    ACTION_ERROR = 4
+    USER_INTERRUPT = 5

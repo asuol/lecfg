@@ -41,18 +41,10 @@ from lecfg.action.action_result import ActionResult
 from lecfg.action.action import Action
 from lecfg.action.action_exception import ActionException
 from lecfg.utilities import user_input
+from lecfg.exit_code import ExitCode
 from pathlib import Path
-from enum import Enum
 from typing import List
 import os
-
-
-class ExitCode(Enum):
-    SAVE_AND_EXIT = 0
-    SYSTEMS_FILE_NOT_FOUND = 1
-    EMPTY_SYSTEMS_FILE = 2
-    README_FILE_NOT_FOUND = 3
-    ACTION_ERROR = 4
 
 
 class Lecfg():
@@ -65,16 +57,16 @@ class Lecfg():
     _deploy_question = "No file exists at the destination yet. %s" % (
         _question)
 
-    _replace_options = [ReadSrcAction("Read src", 1, "less"),
-                        ReadDestAction("Read dest", 2, "less"),
-                        CompareAction("Compare", 3, "diff"),
-                        ReplaceAction("Replace", 4),
-                        NextAction("Skip", 5),
-                        SaveExitAction("Save & exit", 6)]
-    _deploy_options = [ReadSrcAction("Read src", 1, "less"),
-                       DeployAction("Deploy", 2),
-                       NextAction("Skip", 3),
-                       SaveExitAction("Save & exit", 4)]
+    _replace_options = [ReadSrcAction("Read src", "less"),
+                        ReadDestAction("Read dest", "less"),
+                        CompareAction("Compare", "diff"),
+                        ReplaceAction("Replace"),
+                        NextAction("Skip"),
+                        SaveExitAction("Save & exit")]
+    _deploy_options = [ReadSrcAction("Read src", "less"),
+                       DeployAction("Deploy"),
+                       NextAction("Skip"),
+                       SaveExitAction("Save & exit")]
 
     def __init__(self, work_dir: str):
         """

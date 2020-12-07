@@ -35,7 +35,7 @@ class SaveExitAction(Action):
     Action to save and exit the current session
     """
 
-    def __init__(self, name: str, number: int):
+    def __init__(self, name: str):
         """
         Constructor
 
@@ -43,10 +43,8 @@ class SaveExitAction(Action):
         ----------
         name: str
             name of the action
-        number: int
-            number of the action
         """
-        super().__init__(name, number)
+        super().__init__(name)
 
     def run(self, conf: Conf) -> ActionResult:
         return ActionResult.SAVE_AND_EXIT
