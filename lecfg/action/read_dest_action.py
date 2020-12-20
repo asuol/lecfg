@@ -27,6 +27,7 @@
 
 from lecfg.action.read_src_action import ReadSrcAction
 from lecfg.action.action_result import ActionResult
+from lecfg.action.action_cmd import ActionCmd
 from lecfg.conf.conf import Conf
 
 
@@ -35,7 +36,7 @@ class ReadDestAction(ReadSrcAction):
     Action to call file reader on the dest configuration file
     """
 
-    def __init__(self, name: str, action_cmd: str):
+    def __init__(self, name: str, action_cmd: ActionCmd):
         """
         Constructor
 

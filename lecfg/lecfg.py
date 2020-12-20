@@ -39,12 +39,22 @@ from lecfg.action.replace_action import ReplaceAction
 from lecfg.action.compare_action import CompareAction
 from lecfg.action.action_result import ActionResult
 from lecfg.action.action import Action
+from lecfg.action.action_cmd import ActionCmd
 from lecfg.action.action_exception import ActionException
 from lecfg.utilities import user_input
 from lecfg.exit_code import ExitCode
 from pathlib import Path
 from typing import List
 import os
+
+READ_CMD_FILE = "read.cmd"
+COMPARE_CMD_FILE = "compare.cmd"
+
+READ_CMD_FILE_PARAM_CNT = 1
+CMP_CMD_FILE_PARAM_CNT = 2
+
+DEFAULT_READ_CMD = "less"
+DEFAULT_CMP_CMD = "diff -u"
 
 
 class Lecfg():
@@ -56,17 +66,6 @@ class Lecfg():
         _question)
     _deploy_question = "No file exists at the destination yet. %s" % (
         _question)
-
-    _replace_options = [ReadSrcAction("Read src", "less"),
-                        ReadDestAction("Read dest", "less"),
-                        CompareAction("Compare", "diff"),
-                        ReplaceAction("Replace"),
-                        NextAction("Skip"),
-                        SaveExitAction("Save & exit")]
-    _deploy_options = [ReadSrcAction("Read src", "less"),
-                       DeployAction("Deploy"),
-                       NextAction("Skip"),
-                       SaveExitAction("Save & exit")]
 
     def __init__(self, work_dir: str):
         """
@@ -256,6 +255,21 @@ class Lecfg():
             self._error_save_and_exit(package_dir, str(e),
                                       ExitCode.ACTION_ERROR.value, package)
 
+    def _read_cmd_conf(self, conf_file_name: str,
+                       file_param_count: int) -> ActionCmd:
+        file_path = os.path.join(self.work_dir, conf_file_name)
+
+        if os.path.exists(file_path):
+            with open(file_path, "r") as conf:
+                cmd = conf.readline()
+                if cmd == "":
+                    print("%s file found, but it is empty. Ignoring..." %
+                          conf_file_name)
+                    return None
+            return ActionCmd(cmd, file_param_count)
+
+        return None
+
     def process(self) -> None:
         """
         Process the given work directory
@@ -283,6 +297,27 @@ class Lecfg():
         current_system = self._select_system(sys_parser)
         print("\nCurrent system: [ %s ]" % current_system)
 
+        read_cmd = self._read_cmd_conf(READ_CMD_FILE, READ_CMD_FILE_PARAM_CNT)
+        compare_cmd = self._read_cmd_conf(COMPARE_CMD_FILE,
+                                          CMP_CMD_FILE_PARAM_CNT)
+
+        if read_cmd is None:
+            read_cmd = ActionCmd(DEFAULT_READ_CMD, READ_CMD_FILE_PARAM_CNT)
+
+        if compare_cmd is None:
+            compare_cmd = ActionCmd(DEFAULT_CMP_CMD, CMP_CMD_FILE_PARAM_CNT)
+
+        self._replace_options = [ReadSrcAction("Read src", read_cmd),
+                                 ReadDestAction("Read dest", read_cmd),
+                                 CompareAction("Compare", compare_cmd),
+                                 ReplaceAction("Replace"),
+                                 NextAction("Skip"),
+                                 SaveExitAction("Save & exit")]
+
+        self._deploy_options = [ReadSrcAction("Read src", read_cmd),
+                                DeployAction("Deploy"),
+                                NextAction("Skip"),
+                                SaveExitAction("Save & exit")]
         prev_session = self._session_man.get_previous_session()
 
         print("\nDetected package directories:")

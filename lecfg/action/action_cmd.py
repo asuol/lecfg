@@ -24,45 +24,52 @@
 # SOFTWARE.
 ###
 
-
-from lecfg.action.action_result import ActionResult
-from lecfg.conf.conf import Conf
-from lecfg.action.action import Action
-from lecfg.action.action_cmd import ActionCmd
-from lecfg.action.action_exception import ActionException
-import subprocess
+from typing import List
 
 
-class ReadSrcAction(Action):
+class ActionCmd():
     """
-    Action to call file reader on the src configuration file
+    Action command
     """
 
-    def __init__(self, name: str, action_cmd: ActionCmd):
+    def __init__(self, cmd: str, file_param_count: int):
         """
         Constructor
 
         Parameters
         ----------
-        name: str
-            name of the action
-        action_cmd: ActionCmd
-            system command to open a file reader when the this action is run
+        cmd: List[str]
+            system command with parameters
+        file_param_count: int
+            number of file parameters to be received by the system command
+            after the system command parameters
+
         """
-        super().__init__(name)
-        self.action_cmd = action_cmd
+        self.cmd = cmd.split(" ")
+        self.file_param_count = file_param_count
 
-    def _read_file(self, file_path: str):
-        try:
-            run_cmd = self.action_cmd.runnable_command([file_path])
-            subprocess.run(run_cmd, check=True,
-                           stderr=subprocess.PIPE)
-        except subprocess.CalledProcessError as e:
-            raise ActionException(e.cmd, e.returncode,
-                                  e.stderr.decode('ascii'))
+    def runnable_command(self, file_params: List[str]) -> List[str]:
+        """
+        Returns a complete runnable command
 
-        # repeat the question after the edit
-        return ActionResult.REPEAT
+        Parameters
+        ----------
+        file_params: List[str]
+            file paths to be passed as arguments to the system command
 
-    def run(self, conf: Conf) -> ActionResult:
-        return self._read_file(conf.src_path)
+        Returns
+        -------
+        A complete runnable command
+
+        Raises
+        ------
+        AssertionError
+            Raised if the number of provided file parameters does not match the
+            expected number configured for the system command
+        """
+        assert(len(file_params) == self.file_param_count)
+
+        run_cmd = self.cmd.copy()
+        run_cmd.extend(file_params)
+
+        return run_cmd

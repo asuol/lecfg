@@ -28,6 +28,7 @@
 from lecfg.action.action_result import ActionResult
 from lecfg.conf.conf import Conf
 from lecfg.action.action import Action
+from lecfg.action.action_cmd import ActionCmd
 from lecfg.action.action_exception import ActionException
 import subprocess
 
@@ -37,7 +38,7 @@ class CompareAction(Action):
     Action to call diff utility to compare the src and dest configuration files
     """
 
-    def __init__(self, name: str, action_cmd: str):
+    def __init__(self, name: str, action_cmd: ActionCmd):
         """
         Constructor
 
@@ -53,11 +54,16 @@ class CompareAction(Action):
 
     def run(self, conf: Conf) -> ActionResult:
         try:
-            subprocess.run([self.action_cmd, conf.src_path, conf.dest_path],
+            run_cmd = self.action_cmd.runnable_command([conf.dest_path,
+                                                        conf.src_path])
+            subprocess.run(run_cmd,
                            check=True, stderr=subprocess.PIPE)
         except subprocess.CalledProcessError as e:
-            raise ActionException(e.cmd, e.returncode,
-                                  e.stderr.decode('ascii'))
+            # diff uses exitcode 1 to signal that the files differ
+            # and not that an error occurred
+            if e.returncode != 1:
+                raise ActionException(e.cmd, e.returncode,
+                                      e.stderr.decode('ascii'))
 
         # repeat the question after the comparison
         return ActionResult.REPEAT
