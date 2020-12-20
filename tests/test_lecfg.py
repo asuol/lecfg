@@ -1,7 +1,10 @@
-from lecfg.lecfg import Lecfg, ExitCode
+from lecfg.lecfg import Lecfg
+from lecfg.exit_code import ExitCode
 import pytest
 import os
 import io
+import glob
+import subprocess
 
 TEST_PACKAGE_CONF = """
 # README.lc
@@ -20,58 +23,33 @@ Debian | grep "Debian" /etc/os-release
 Gentoo | -
 """
 
-
-@pytest.fixture
-def _setup(tmpdir):
-    def _create_file(file_name: str, file_contents: str,
-                     parent_dir: str = None) -> str:
-        if parent_dir is None:
-            dir_path = str(tmpdir)
-        else:
-            dir_path = os.path.join(str(tmpdir), parent_dir)
-
-            if not os.path.isdir(dir_path):
-                os.mkdir(dir_path)
-
-        file_path = os.path.join(dir_path, file_name)
-
-        with open(file_path, "w") as file:
-            for line in file_contents:
-                file.write(line)
-
-        return dir_path
-
-    return _create_file
-
-
-@pytest.fixture
-def _create_dir(tmpdir):
-    def _create_empty_dir(dir_name: str) -> str:
-        dir_path = os.path.join(str(tmpdir), dir_name)
-
-        os.mkdir(dir_path)
-
-        return dir_path
-
-    return _create_empty_dir
+MOCK_READ_CMD = "less"
+MOCK_CMP_CMD = "diff -u"
 
 
 def file_exists(parent_dir: str, file_name: str) -> bool:
     path = os.path.join(parent_dir, file_name)
 
-    return os.path.isfile(path)
+    return len(glob.glob(path)) > 0
+
+
+def check_file_contents(parent_dir: str, file_name: str,
+                        file_contents: str) -> bool:
+    path = os.path.join(parent_dir, file_name)
+
+    return file_contents == open(path, 'r').read()
 
 
 def test_empty_work_dir(tmpdir):
-    lcfg = Lecfg(str(tmpdir))
+    lecfg = Lecfg(str(tmpdir))
     with pytest.raises(SystemExit) as e:
-        lcfg.process()
+        lecfg.process()
 
     assert e.value.code == ExitCode.SYSTEMS_FILE_NOT_FOUND.value
 
 
-def test_empty_systems_file(_setup):
-    work_dir = _setup("lecfg.systems", "")
+def test_empty_systems_file(setup):
+    work_dir = setup("lecfg.systems", "")
     lcfg = Lecfg(work_dir)
     with pytest.raises(SystemExit) as e:
         lcfg.process()
@@ -79,8 +57,8 @@ def test_empty_systems_file(_setup):
     assert e.value.code == ExitCode.EMPTY_SYSTEMS_FILE.value
 
 
-def test_single_system_conf(_setup, capsys):
-    work_dir = _setup("lecfg.systems", ONE_SYSTEM_CONF)
+def test_single_system_conf(setup, capsys):
+    work_dir = setup("lecfg.systems", ONE_SYSTEM_CONF)
 
     lecfg = Lecfg(work_dir)
     lecfg.process()
@@ -90,8 +68,8 @@ def test_single_system_conf(_setup, capsys):
     assert "Current system: [ Debian ]" in capture.out
 
 
-def test_multiple_system_conf(_setup, capsys, monkeypatch):
-    work_dir = _setup("lecfg.systems", TWO_SYSTEM_CONF)
+def test_multiple_system_conf(setup, capsys, monkeypatch):
+    work_dir = setup("lecfg.systems", TWO_SYSTEM_CONF)
 
     # select the second system
     monkeypatch.setattr('sys.stdin', io.StringIO('2'))
@@ -104,26 +82,81 @@ def test_multiple_system_conf(_setup, capsys, monkeypatch):
     assert "Current system: [ Gentoo ]" in capture.out
 
 
-def test_package_deploy(_setup, _create_dir, capsys, monkeypatch):
-    work_dir = _setup("lecfg.systems", ONE_SYSTEM_CONF, parent_dir="work_dir")
-    system_dir = _create_dir("SYSTEM")
+def test_package_deploy_replace(setup, create_dir, monkeypatch):
+    work_dir = setup("lecfg.systems", ONE_SYSTEM_CONF, parent_dir="work_dir")
+    system_dir = create_dir("SYSTEM")
 
     package_dir = os.path.join(work_dir, "vim")
 
-    _setup("README.lc",
-           TEST_PACKAGE_CONF % (system_dir, system_dir, system_dir),
-           parent_dir=package_dir)
+    setup("README.lc",
+          TEST_PACKAGE_CONF % (system_dir, system_dir, system_dir),
+          parent_dir=package_dir)
 
-    _setup(".vimrc", "", parent_dir=package_dir)
-    _setup(".vimrc_gentoo", "", parent_dir=package_dir)
-    _setup(".vimrc_work", "", parent_dir=package_dir)
+    replace_data = "some sample conf"
 
-    # Deploy the two files that apply to the current system
-    monkeypatch.setattr('sys.stdin', io.StringIO('2\n2'))
+    # setup package dir
+    setup(".vimrc", "", parent_dir=package_dir)
+    setup(".vimrc_gentoo", "", parent_dir=package_dir)
+    setup(".vimrc_work", replace_data, parent_dir=package_dir)
+
+    # setup system dir
+    setup(".vimrc_work", "", parent_dir=system_dir)
+
+    # Deploy the first file and replace the second file
+    # from the 2 files that apply to the current system
+    monkeypatch.setattr('sys.stdin', io.StringIO('2\n4'))
+
+    assert file_exists(system_dir, ".vimrc") is False
+    assert file_exists(system_dir, ".vimrc_gentoo") is False
+    assert file_exists(system_dir, ".vimrc_work") is True
+    assert check_file_contents(system_dir, ".vimrc_work", "") is True
+
+    lecfg = Lecfg(work_dir)
+    lecfg.process()
+
+    assert file_exists(system_dir, ".vimrc") is True
+    assert file_exists(system_dir, ".vimrc_gentoo") is False
+    assert file_exists(system_dir, ".vimrc_work") is True
+    assert check_file_contents(system_dir, ".vimrc_work", replace_data) is True
+
+
+def test_session(setup, create_dir, monkeypatch):
+    work_dir = setup("lecfg.systems", ONE_SYSTEM_CONF, parent_dir="work_dir")
+    system_dir = create_dir("SYSTEM")
+
+    package_dir = os.path.join(work_dir, "vim")
+
+    setup("README.lc",
+          TEST_PACKAGE_CONF % (system_dir, system_dir, system_dir),
+          parent_dir=package_dir)
+
+    setup(".vimrc", "", parent_dir=package_dir)
+    setup(".vimrc_gentoo", "", parent_dir=package_dir)
+    setup(".vimrc_work", "", parent_dir=package_dir)
+
+    # Deploy the first file that applies to the current system, and save and
+    # exit
+    monkeypatch.setattr('sys.stdin', io.StringIO('2\n4'))
 
     assert file_exists(system_dir, ".vimrc") is False
     assert file_exists(system_dir, ".vimrc_gentoo") is False
     assert file_exists(system_dir, ".vimrc_work") is False
+
+    lecfg = Lecfg(work_dir)
+
+    with pytest.raises(SystemExit) as e:
+        lecfg.process()
+
+    assert e.value.code == ExitCode.SAVE_AND_EXIT.value
+
+    assert file_exists(system_dir, ".vimrc") is True
+    assert file_exists(system_dir, ".vimrc_gentoo") is False
+    assert file_exists(system_dir, ".vimrc_work") is False
+
+    assert file_exists(work_dir, "*_lecfg.sav") is True
+
+    # resume previous session, and deploy the remaining file
+    monkeypatch.setattr('sys.stdin', io.StringIO('1\n2'))
 
     lecfg = Lecfg(work_dir)
     lecfg.process()
@@ -132,10 +165,123 @@ def test_package_deploy(_setup, _create_dir, capsys, monkeypatch):
     assert file_exists(system_dir, ".vimrc_gentoo") is False
     assert file_exists(system_dir, ".vimrc_work") is True
 
-
-def test_session():
-    pass
+    assert file_exists(work_dir, "*_lecfg.sav") is False
 
 
-def test_package_replace():
-    pass
+def test_multiple_sessions(setup, create_dir, monkeypatch):
+    work_dir = setup("lecfg.systems", ONE_SYSTEM_CONF, parent_dir="work_dir")
+    system_dir = create_dir("SYSTEM")
+
+    first_session = "10-12-2020_20-20_lecfg.sav"
+    second_session = "15-12-2020_21-21_lecfg.sav"
+
+    package_dir = os.path.join(work_dir, "vim")
+
+    setup(first_session, "%s,1" % package_dir, parent_dir=work_dir)
+    setup(second_session, "%s,3" % package_dir, parent_dir=work_dir)
+
+    setup("README.lc",
+          TEST_PACKAGE_CONF % (system_dir, system_dir, system_dir),
+          parent_dir=package_dir)
+
+    setup(".vimrc", "", parent_dir=package_dir)
+    setup(".vimrc_gentoo", "", parent_dir=package_dir)
+    setup(".vimrc_work", "", parent_dir=package_dir)
+
+    # resume previous session, select second session, which will skip the
+    # first 2 lines, and deploy just the last applicable file
+    monkeypatch.setattr('sys.stdin', io.StringIO('1\n2\n2'))
+
+    lecfg = Lecfg(work_dir)
+    lecfg.process()
+
+    assert file_exists(system_dir, ".vimrc") is False
+    assert file_exists(system_dir, ".vimrc_gentoo") is False
+    assert file_exists(system_dir, ".vimrc_work") is True
+
+    assert file_exists(work_dir, first_session) is True
+    assert file_exists(work_dir, second_session) is False
+
+
+def test_read_action(setup, create_dir, monkeypatch, mocker):
+    work_dir = setup("lecfg.systems", ONE_SYSTEM_CONF, parent_dir="work_dir")
+    system_dir = create_dir("SYSTEM")
+
+    package_dir = os.path.join(work_dir, "vim")
+
+    setup("README.lc",
+          TEST_PACKAGE_CONF % (system_dir, system_dir, system_dir),
+          parent_dir=package_dir)
+
+    setup(".vimrc", "", parent_dir=package_dir)
+    setup(".vimrc_gentoo", "", parent_dir=package_dir)
+    setup(".vimrc_work", "", parent_dir=package_dir)
+
+    setup("read.cmd", MOCK_READ_CMD, parent_dir=work_dir)
+
+    mocker.patch("subprocess.run")
+
+    # read first file, and skip all files
+    monkeypatch.setattr('sys.stdin', io.StringIO('1\n3\n3\n3'))
+
+    lecfg = Lecfg(work_dir)
+    lecfg.process()
+
+    assert file_exists(system_dir, ".vimrc") is False
+    assert file_exists(system_dir, ".vimrc_gentoo") is False
+    assert file_exists(system_dir, ".vimrc_work") is False
+
+    file_path = os.path.join(package_dir, ".vimrc")
+
+    subprocess.run.assert_called_once_with([MOCK_READ_CMD, file_path],
+                                           check=True, stderr=subprocess.PIPE)
+
+
+def test_compare_action(setup, create_dir, monkeypatch, mocker):
+    work_dir = setup("lecfg.systems", ONE_SYSTEM_CONF, parent_dir="work_dir")
+    system_dir = create_dir("SYSTEM")
+
+    package_dir = os.path.join(work_dir, "vim")
+
+    setup("README.lc",
+          TEST_PACKAGE_CONF % (system_dir, system_dir, system_dir),
+          parent_dir=package_dir)
+
+    file_content = "content"
+
+    # setup package dir
+    setup(".vimrc", "", parent_dir=package_dir)
+    setup(".vimrc_gentoo", "", parent_dir=package_dir)
+    setup(".vimrc_work", file_content, parent_dir=package_dir)
+
+    # setup system dir
+    setup(".vimrc_work", "", parent_dir=system_dir)
+
+    # setup work dir
+    setup("compare.cmd", MOCK_CMP_CMD, parent_dir=work_dir)
+
+    assert file_exists(system_dir, ".vimrc") is False
+    assert file_exists(system_dir, ".vimrc_gentoo") is False
+    assert file_exists(system_dir, ".vimrc_work") is True
+
+    mocker.patch("subprocess.run")
+
+    # compare last file, and skip all files
+    monkeypatch.setattr('sys.stdin', io.StringIO('3\n3\n5'))
+
+    lecfg = Lecfg(work_dir)
+    lecfg.process()
+
+    assert file_exists(system_dir, ".vimrc") is False
+    assert file_exists(system_dir, ".vimrc_gentoo") is False
+    assert file_exists(system_dir, ".vimrc_work") is True
+
+    src_path = os.path.join(package_dir, ".vimrc_work")
+    dest_path = os.path.join(system_dir, ".vimrc_work")
+
+    cmd = MOCK_CMP_CMD.split(" ")
+    cmd.append(dest_path)
+    cmd.append(src_path)
+
+    subprocess.run.assert_called_once_with(cmd, check=True,
+                                           stderr=subprocess.PIPE)

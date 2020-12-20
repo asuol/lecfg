@@ -24,6 +24,7 @@ def test_parse(setup):
     conf_objs = []
 
     for conf in vim_package.configurations():
+        print("test iter")
         conf_objs.append(conf)
 
     assert len(conf_objs) == 2
