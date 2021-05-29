@@ -179,15 +179,16 @@ class Lecfg():
         -------
         None
         """
-        query = []
-        query.append("Handling configuration file:\n")
-        query.append("* Source path [src]:       %s" % conf.src_path)
-        query.append("* Destination path [dest]: %s\n" % conf.dest_path)
+        print("   --------------------------------------------\n")
+        print("Handling configuration file:\n")
+        print("* Source path [src]:       %s" % conf.src_path)
+        print("* Destination path [dest]: %s\n" % conf.dest_path)
 
         if conf.description is not None:
-            query.append("* Description:             %s" % conf.description)
+            print("* Description:             %s" % conf.description)
 
-        query.append("* Applies to versions:     %s\n" % conf.version)
+        print("* Applies to versions:     %s\n" % conf.version)
+        query = []
         query.append(question + "\n")
 
         selection = user_input(query, options)
@@ -295,7 +296,7 @@ class Lecfg():
             exit(ExitCode.SYSTEMS_FILE_NOT_FOUND.value)
 
         current_system = self._select_system(sys_parser)
-        print("\nCurrent system: [ %s ]" % current_system)
+        print("\nCurrent system: [ %s ]\n" % current_system)
 
         read_cmd = self._read_cmd_conf(READ_CMD_FILE, READ_CMD_FILE_PARAM_CNT)
         compare_cmd = self._read_cmd_conf(COMPARE_CMD_FILE,

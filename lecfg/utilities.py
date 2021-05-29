@@ -34,7 +34,7 @@ def user_input(question: List[str], options: List[str]) -> int:
     while True:
         try:
             for q in question:
-                print(q)
+                print("=> %s" % q)
 
             for i, o in enumerate(options):
                 print("[%d] %s" % (i + 1, o))

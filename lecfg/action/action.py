@@ -63,7 +63,7 @@ class Action(ABC):
         ActionResult
             user decision on the action
         """
-        pass
+        pass  # pragma: no cover
 
     def print_action_outcome(self, outcome: str) -> None:
         print("\n%s\n" % outcome)

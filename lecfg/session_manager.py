@@ -64,8 +64,7 @@ class SessionManager():
 
         if session_count > 0:
             question = []
-            question.append("\nThere is at least one previously saved session")
-            question.append("\nDo you want to resume?\n")
+            question.append("There is at least one previously saved session. Do you want to resume?\n")
 
             options = []
             options.append("Yes")
