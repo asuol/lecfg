@@ -235,8 +235,11 @@ class Lecfg():
             self._error_save_and_exit(package_dir, error_msg,
                                       ExitCode.README_FILE_NOT_FOUND.value)
 
+        has_configuration = False
+
         try:
             for conf in package.configurations():
+                has_configuration = True
                 if Path(conf.dest_path).exists():
                     question = self._replace_question
                     options = self._replace_options
@@ -255,6 +258,10 @@ class Lecfg():
         except ActionException as e:
             self._error_save_and_exit(package_dir, str(e),
                                       ExitCode.ACTION_ERROR.value, package)
+
+        if not has_configuration:
+            print("No configuration defined for package [ %s ]."
+                  " Skipping...\n" % package_dir)
 
     def _read_cmd_conf(self, conf_file_name: str,
                        file_param_count: int) -> ActionCmd:

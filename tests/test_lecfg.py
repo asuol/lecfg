@@ -285,3 +285,19 @@ def test_compare_action(setup, create_dir, monkeypatch, mocker):
 
     subprocess.run.assert_called_once_with(cmd, check=True,
                                            stderr=subprocess.PIPE)
+
+
+def test_empty_readme(setup, capsys):
+    work_dir = setup("lecfg.systems", ONE_SYSTEM_CONF)
+    package_name = "FakePackage"
+    package_dir = os.path.join(work_dir, package_name)
+
+    setup("README.lc", "", parent_dir=package_dir)
+
+    lecfg = Lecfg(work_dir)
+    lecfg.process()
+
+    capture = capsys.readouterr()
+
+    assert "No configuration defined for package [ %s ]" % (
+        package_dir) in capture.out
