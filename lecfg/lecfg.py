@@ -25,7 +25,7 @@
 ###
 
 from lecfg.conf.systems_parser import SystemsParser
-from lecfg.conf.package_parser import PackageParser
+from lecfg.conf.package_parser import PackageParser, README_FILE_NAME
 from lecfg.conf.conf_exception import ConfException
 from lecfg.session_manager import SessionManager
 from lecfg.session import Session
@@ -327,8 +327,12 @@ class Lecfg():
         package_directories = []
 
         for sub_dir in sub_directories:
-            package_directories.append(os.path.join(self.work_dir, sub_dir))
-            print("    [ %s ]" % sub_dir)
+            sub_dir_path = os.path.join(self.work_dir, sub_dir)
+            readme_file = Path(sub_dir_path) / README_FILE_NAME
+
+            if readme_file.exists():
+                package_directories.append(sub_dir_path)
+                print("    [ %s ]" % sub_dir)
 
         print("\n>>>>>>>>>>>>>>>>>>>>LeCFG START>>>>>>>>>>>>>>>>>>>>\n")
 
