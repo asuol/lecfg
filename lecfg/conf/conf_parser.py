@@ -89,7 +89,7 @@ class ConfParser():
             # ignore empty lines and comments
             if line.isspace() or line.lstrip().startswith("#"):
                 continue
-            self._line_num = line_num
+            self._line_num = line_num + self._first_line
             yield list(map(lambda l: l.strip(), line.split('|')))
 
         self._conf_file.close()

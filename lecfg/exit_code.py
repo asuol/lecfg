@@ -34,3 +34,4 @@ class ExitCode(Enum):
     README_FILE_NOT_FOUND = 3
     ACTION_ERROR = 4
     USER_INTERRUPT = 5
+    INVALID_README_FORMAT = 6

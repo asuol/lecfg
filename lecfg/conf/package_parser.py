@@ -94,7 +94,8 @@ class PackageParser(ConfParser):
                            (PACKAGE_CONF_FIELD_COUNT,
                             package_conf_field_count))
 
-                raise ConfException(self._package_dir_path, message,
+                raise ConfException(os.path.join(self._package_dir_path,
+                                                 README_FILE_NAME), message,
                                     self.line_num)
 
             src_path = os.path.join(self._package_dir_path, package_conf[0])

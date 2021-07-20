@@ -162,7 +162,8 @@ class Lecfg():
         else:
             print(error_msg)
             line_num = None
-        print("The current state has been saved to and once you correct the "
+
+        print("The current state has been saved and once you correct the "
               "error lecfg will resume from this point")
 
         self._save_and_exit(package_name, line_num, exit_code)
@@ -268,6 +269,10 @@ class Lecfg():
         except ActionException as e:
             self._error_save_and_exit(package_dir, str(e),
                                       ExitCode.ACTION_ERROR.value, package)
+        except ConfException as e:
+            self._error_save_and_exit(package_dir, str(e),
+                                      ExitCode.INVALID_README_FORMAT.value,
+                                      package)
 
         if not has_configuration:
             print("No configuration defined for package [ %s ]."

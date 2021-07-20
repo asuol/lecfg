@@ -19,6 +19,16 @@ NO_PARENT_PACKAGE_CONF = """
 dummy | - | - | %s/some/dir/dummy | Dummy conf
 """
 
+INVALID_PACKAGE_CONF = """
+# Incorrect number of fields below
+file
+"""
+
+CORRECTED_PACKAGE_CONF = """
+# Valid line below
+.vimrc |  - |  - | %s/.vimrc | Vim Configuration
+"""
+
 ONE_SYSTEM_CONF = """
 Debian | grep "Debian" /etc/os-release
 """
@@ -409,3 +419,32 @@ def test_skip_package(setup, create_dir, monkeypatch):
     assert file_exists(system_dir, ".vimrc") is True
     assert file_exists(system_dir, ".vimrc_gentoo") is False
     assert file_exists(system_dir, ".vimrc_work") is True
+
+
+def test_error_save_and_exit(setup, create_dir, monkeypatch):
+    work_dir = setup("lecfg.systems", ONE_SYSTEM_CONF, parent_dir="work_dir")
+    system_dir = create_dir("SYSTEM")
+
+    package_dir = os.path.join(work_dir, "vim")
+
+    setup("README.lc", INVALID_PACKAGE_CONF, parent_dir=package_dir)
+
+    lecfg = Lecfg(work_dir)
+    with pytest.raises(SystemExit) as e:
+        lecfg.process()
+
+    assert e.value.code == ExitCode.INVALID_README_FORMAT.value
+
+    assert file_exists(system_dir, ".vimrc") is False
+
+    # fix the README
+    setup("README.lc", CORRECTED_PACKAGE_CONF % system_dir,
+          parent_dir=package_dir)
+
+    # load the previous session and deploy the file
+    monkeypatch.setattr('sys.stdin', io.StringIO('1\n2'))
+
+    lecfg = Lecfg(work_dir)
+    lecfg.process()
+
+    assert file_exists(system_dir, ".vimrc") is True
