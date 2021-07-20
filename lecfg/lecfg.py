@@ -35,6 +35,7 @@ from lecfg.action.read_dest_action import ReadDestAction
 from lecfg.action.save_exit_action import SaveExitAction
 from lecfg.action.next_action import NextAction
 from lecfg.action.deploy_action import DeployAction
+from lecfg.action.no_parent_deploy_action import NoParentDeployAction
 from lecfg.action.replace_action import ReplaceAction
 from lecfg.action.compare_action import CompareAction
 from lecfg.action.action_result import ActionResult
@@ -66,6 +67,9 @@ class Lecfg():
         _question)
     _deploy_question = "No file exists at the destination yet. %s" % (
         _question)
+    _no_parent_deploy_question = ("No file exists at the destination yet "
+                                  "(dest dir also does not exist). %s" %
+                                  _question)
 
     def __init__(self, work_dir: str):
         """
@@ -243,9 +247,12 @@ class Lecfg():
                 if Path(conf.dest_path).exists():
                     question = self._replace_question
                     options = self._replace_options
-                else:
+                elif Path(conf.dest_path).parent.exists():
                     question = self._deploy_question
                     options = self._deploy_options
+                else:
+                    question = self._no_parent_deploy_question
+                    options = self._no_parent_deploy_options
 
                 while True:
                     result = self._ask_question(question, options, conf)
@@ -326,6 +333,13 @@ class Lecfg():
                                 DeployAction("Deploy"),
                                 NextAction("Skip"),
                                 SaveExitAction("Save & exit")]
+
+        self._no_parent_deploy_options = [
+            ReadSrcAction("Read src", read_cmd),
+            NoParentDeployAction("Create dest directory and deploy"),
+            NextAction("Skip"),
+            SaveExitAction("Save & exit")]
+
         prev_session = self._session_man.get_previous_session()
 
         print("\nDetected package directories:")

@@ -14,6 +14,10 @@ TEST_PACKAGE_CONF = """
 .vimrc_work | 8.0 | Debian,Gentoo | %s/.vimrc_work | Vim configuration
 """
 
+NO_PARENT_PACKAGE_CONF = """
+dummy | - | - | %s/some/dir/dummy | Dummy conf
+"""
+
 ONE_SYSTEM_CONF = """
 Debian | grep "Debian" /etc/os-release
 """
@@ -301,3 +305,29 @@ def test_empty_readme(setup, capsys):
 
     assert "No configuration defined for package [ %s ]" % (
         package_dir) in capture.out
+
+
+def test_no_parent_deploy(setup, create_dir, monkeypatch):
+    work_dir = setup("lecfg.systems", ONE_SYSTEM_CONF, parent_dir="work_dir")
+    system_dir = create_dir("SYSTEM")
+
+    package_dir = os.path.join(work_dir, "dummy")
+
+    setup("README.lc",
+          NO_PARENT_PACKAGE_CONF % system_dir,
+          parent_dir=package_dir)
+
+    # setup package dir
+    setup("dummy", "", parent_dir=package_dir)
+
+    # Create the missing parent directories and deploy the conf file
+    monkeypatch.setattr('sys.stdin', io.StringIO('2'))
+
+    parent_dir = os.path.join(system_dir, "some", "dir")
+
+    assert file_exists(parent_dir, "dummy") is False
+
+    lecfg = Lecfg(work_dir)
+    lecfg.process()
+
+    assert file_exists(parent_dir, "dummy") is True
