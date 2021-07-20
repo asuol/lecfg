@@ -141,7 +141,7 @@ def test_session(setup, create_dir, monkeypatch):
 
     # Deploy the first file that applies to the current system, and save and
     # exit
-    monkeypatch.setattr('sys.stdin', io.StringIO('2\n4'))
+    monkeypatch.setattr('sys.stdin', io.StringIO('2\n5'))
 
     assert file_exists(system_dir, ".vimrc") is False
     assert file_exists(system_dir, ".vimrc_gentoo") is False
@@ -376,3 +376,36 @@ def test_replace_symlink(setup, create_dir, monkeypatch):
     assert file_exists(system_dir, ".vimrc_work") is True
     assert check_file_contents(system_dir, ".vimrc_work", replace_data) is True
     assert symlink.is_symlink() is True
+
+
+def test_skip_package(setup, create_dir, monkeypatch):
+    work_dir = setup("lecfg.systems", ONE_SYSTEM_CONF, parent_dir="work_dir")
+    system_dir = create_dir("SYSTEM")
+
+    dummy_package_dir = os.path.join(work_dir, "dummy")
+
+    setup("README.lc",
+          TEST_PACKAGE_CONF % (system_dir, system_dir, system_dir),
+          parent_dir=dummy_package_dir)
+
+    setup(".vimrc", "", parent_dir=dummy_package_dir)
+
+    package_dir = os.path.join(work_dir, "vim")
+
+    setup("README.lc",
+          TEST_PACKAGE_CONF % (system_dir, system_dir, system_dir),
+          parent_dir=package_dir)
+
+    setup(".vimrc", "", parent_dir=package_dir)
+    setup(".vimrc_gentoo", "", parent_dir=package_dir)
+    setup(".vimrc_work", "", parent_dir=package_dir)
+
+    # skip the first package, and deploy the two files that apply to the system
+    monkeypatch.setattr('sys.stdin', io.StringIO('4\n2\n2'))
+
+    lecfg = Lecfg(work_dir)
+    lecfg.process()
+
+    assert file_exists(system_dir, ".vimrc") is True
+    assert file_exists(system_dir, ".vimrc_gentoo") is False
+    assert file_exists(system_dir, ".vimrc_work") is True

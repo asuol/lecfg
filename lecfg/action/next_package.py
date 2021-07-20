@@ -25,11 +25,27 @@
 ###
 
 
-from enum import Enum
+from lecfg.action.action_result import ActionResult
+from lecfg.conf.conf import Conf
+from lecfg.action.action import Action
 
 
-class ActionResult(Enum):
-    REPEAT = 0
-    NEXT = 1
-    SAVE_AND_EXIT = 2
-    NEXT_PACKAGE = 3
+class NextPackage(Action):
+    """
+    Action to move to the next package
+    """
+
+    def __init__(self, name: str):
+        """
+        Constructor
+
+        Parameters
+        ----------
+        name: str
+            name of the action
+        """
+        super().__init__(name)
+
+    def run(self, conf: Conf) -> ActionResult:
+        super().print_action_outcome("Moving on to the next package...")
+        return ActionResult.NEXT_PACKAGE

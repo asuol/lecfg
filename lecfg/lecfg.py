@@ -34,6 +34,7 @@ from lecfg.action.read_src_action import ReadSrcAction
 from lecfg.action.read_dest_action import ReadDestAction
 from lecfg.action.save_exit_action import SaveExitAction
 from lecfg.action.next_action import NextAction
+from lecfg.action.next_package import NextPackage
 from lecfg.action.deploy_action import DeployAction
 from lecfg.action.no_parent_deploy_action import NoParentDeployAction
 from lecfg.action.replace_action import ReplaceAction
@@ -262,6 +263,8 @@ class Lecfg():
 
                 if result is ActionResult.SAVE_AND_EXIT:
                     self._save_and_exit(package_dir, package.line_num)
+                elif result is ActionResult.NEXT_PACKAGE:
+                    break
         except ActionException as e:
             self._error_save_and_exit(package_dir, str(e),
                                       ExitCode.ACTION_ERROR.value, package)
@@ -327,17 +330,20 @@ class Lecfg():
                                  CompareAction("Compare", compare_cmd),
                                  ReplaceAction("Replace"),
                                  NextAction("Skip"),
+                                 NextPackage("Skip to next package"),
                                  SaveExitAction("Save & exit")]
 
         self._deploy_options = [ReadSrcAction("Read src", read_cmd),
                                 DeployAction("Deploy"),
                                 NextAction("Skip"),
+                                NextPackage("Skip to next package"),
                                 SaveExitAction("Save & exit")]
 
         self._no_parent_deploy_options = [
             ReadSrcAction("Read src", read_cmd),
             NoParentDeployAction("Create dest directory and deploy"),
             NextAction("Skip"),
+            NextPackage("Skip to next package"),
             SaveExitAction("Save & exit")]
 
         prev_session = self._session_man.get_previous_session()
