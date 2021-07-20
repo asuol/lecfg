@@ -1,5 +1,6 @@
 from lecfg.lecfg import Lecfg
 from lecfg.exit_code import ExitCode
+from pathlib import Path
 import pytest
 import os
 import io
@@ -331,3 +332,47 @@ def test_no_parent_deploy(setup, create_dir, monkeypatch):
     lecfg.process()
 
     assert file_exists(parent_dir, "dummy") is True
+
+
+def test_replace_symlink(setup, create_dir, monkeypatch):
+    work_dir = setup("lecfg.systems", ONE_SYSTEM_CONF, parent_dir="work_dir")
+    system_dir = create_dir("SYSTEM")
+
+    package_dir = os.path.join(work_dir, "vim")
+
+    setup("README.lc",
+          TEST_PACKAGE_CONF % (system_dir, system_dir, system_dir),
+          parent_dir=package_dir)
+
+    replace_data = "some sample conf"
+
+    # setup package dir
+    setup(".vimrc", "", parent_dir=package_dir)
+    setup(".vimrc_gentoo", "", parent_dir=package_dir)
+    setup(".vimrc_work", replace_data, parent_dir=package_dir)
+
+    # setup system dir
+    setup(".vimrc_work_orig", "", parent_dir=system_dir)
+    symlink = Path(system_dir) / ".vimrc_work"
+    orig_conf = Path(system_dir) / ".vimrc_work_orig"
+
+    symlink.symlink_to(orig_conf)
+
+    # Deploy the first file and replace the second file
+    # from the 2 files that apply to the current system
+    monkeypatch.setattr('sys.stdin', io.StringIO('2\n4'))
+
+    assert file_exists(system_dir, ".vimrc") is False
+    assert file_exists(system_dir, ".vimrc_gentoo") is False
+    assert file_exists(system_dir, ".vimrc_work") is True
+    assert check_file_contents(system_dir, ".vimrc_work", "") is True
+    assert symlink.is_symlink() is True
+
+    lecfg = Lecfg(work_dir)
+    lecfg.process()
+
+    assert file_exists(system_dir, ".vimrc") is True
+    assert file_exists(system_dir, ".vimrc_gentoo") is False
+    assert file_exists(system_dir, ".vimrc_work") is True
+    assert check_file_contents(system_dir, ".vimrc_work", replace_data) is True
+    assert symlink.is_symlink() is True
