@@ -218,7 +218,10 @@ class Lecfg():
 
         Returns
         -------
-        None
+        Session
+            previous session (if one was provided and the system has not
+            resumed it yet), or None if no previous_session was provided or if
+            the system has already resumed it
         """
         if (previous_session is not None
            and previous_session.package_dir != package_dir):
@@ -226,7 +229,7 @@ class Lecfg():
             # left on
             print("Resuming previous session ... skipping [ %s ]..." %
                   package_dir)
-            return
+            return previous_session
 
         print("Processing package directory: [ %s ]\n" % package_dir)
 
@@ -246,7 +249,10 @@ class Lecfg():
         try:
             for conf in package.configurations():
                 has_configuration = True
-                if Path(conf.dest_path).exists():
+                if(Path(conf.dest_path).exists()
+                   or
+                   Path(conf.dest_path).is_symlink()
+                   ):
                     question = self._replace_question
                     options = self._replace_options
                 elif Path(conf.dest_path).parent.exists():
@@ -277,6 +283,8 @@ class Lecfg():
         if not has_configuration:
             print("No configuration defined for package [ %s ]."
                   " Skipping...\n" % package_dir)
+
+        return None
 
     def _read_cmd_conf(self, conf_file_name: str,
                        file_param_count: int) -> ActionCmd:
@@ -369,6 +377,7 @@ class Lecfg():
         print("\n>>>>>>>>>>>>>>>>>>>>LeCFG START>>>>>>>>>>>>>>>>>>>>\n")
 
         for package_dir in package_directories:
-            self._process_package(package_dir, current_system, prev_session)
+            prev_session = self._process_package(package_dir, current_system,
+                                                 prev_session)
 
         print("\n<<<<<<<<<<<<<<<<<<<<<LeCFG END<<<<<<<<<<<<<<<<<<<<<\n")

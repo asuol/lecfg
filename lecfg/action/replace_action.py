@@ -55,7 +55,7 @@ class ReplaceAction(DeployAction):
     def run(self, conf: Conf) -> ActionResult:
         dest_path = Path(conf.dest_path)
 
-        if dest_path.samefile(conf.src_path):
+        if dest_path.exists() and dest_path.samefile(conf.src_path):
             # If the destination file is already a sym link to the src, just
             # return
             return ActionResult.NEXT

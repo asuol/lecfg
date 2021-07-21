@@ -425,7 +425,7 @@ def test_error_save_and_exit(setup, create_dir, monkeypatch):
     work_dir = setup("lecfg.systems", ONE_SYSTEM_CONF, parent_dir="work_dir")
     system_dir = create_dir("SYSTEM")
 
-    package_dir = os.path.join(work_dir, "vim")
+    package_dir = os.path.join(work_dir, "xpto")
 
     setup("README.lc", INVALID_PACKAGE_CONF, parent_dir=package_dir)
 
@@ -436,15 +436,25 @@ def test_error_save_and_exit(setup, create_dir, monkeypatch):
     assert e.value.code == ExitCode.INVALID_README_FORMAT.value
 
     assert file_exists(system_dir, ".vimrc") is False
+    assert file_exists(system_dir, ".vimrc_work") is False
 
     # fix the README
     setup("README.lc", CORRECTED_PACKAGE_CONF % system_dir,
           parent_dir=package_dir)
 
-    # load the previous session and deploy the file
-    monkeypatch.setattr('sys.stdin', io.StringIO('1\n2'))
+    vim_dir = os.path.join(work_dir, "vim")
+
+    setup("README.lc",
+          TEST_PACKAGE_CONF % (system_dir, system_dir, system_dir),
+          parent_dir=vim_dir)
+
+    # load the previous session and deploy the corrected file, and
+    # replace the corrected file with the one from the "vim" package, and
+    # deploy the last file from the "vim" package
+    monkeypatch.setattr('sys.stdin', io.StringIO('1\n2\n4\n2'))
 
     lecfg = Lecfg(work_dir)
     lecfg.process()
 
     assert file_exists(system_dir, ".vimrc") is True
+    assert file_exists(system_dir, ".vimrc_work") is True
