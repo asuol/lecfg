@@ -101,7 +101,7 @@ class PackageParser(ConfParser):
             src_path = os.path.join(self._package_dir_path, package_conf[0])
             version = package_conf[1]
             system_list = package_conf[2].split(',')
-            dest_path = package_conf[3]
+            dest_path = os.path.expandvars(package_conf[3])
             description = package_conf[4]
 
             if(system_list[0] == "-"
