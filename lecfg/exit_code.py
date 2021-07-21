@@ -35,3 +35,4 @@ class ExitCode(Enum):
     ACTION_ERROR = 4
     USER_INTERRUPT = 5
     INVALID_README_FORMAT = 6
+    PERMISSION_ERROR = 7

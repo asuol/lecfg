@@ -279,6 +279,14 @@ class Lecfg():
             self._error_save_and_exit(package_dir, str(e),
                                       ExitCode.INVALID_README_FORMAT.value,
                                       package)
+        except PermissionError as e:
+            error_msg = ("Insufficient permissions. Session was saved. Please"
+                         " run LECFG as root/admin and resume the current "
+                         "session: %s" % str(e)
+                         )
+            self._error_save_and_exit(package_dir, error_msg,
+                                      ExitCode.PERMISSION_ERROR.value,
+                                      package)
 
         if not has_configuration:
             print("No configuration defined for package [ %s ]."
