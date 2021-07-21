@@ -56,7 +56,7 @@ READ_CMD_FILE_PARAM_CNT = 1
 CMP_CMD_FILE_PARAM_CNT = 2
 
 DEFAULT_READ_CMD = "less"
-DEFAULT_CMP_CMD = "diff -u"
+DEFAULT_CMP_CMD = "diff -su"
 
 
 class Lecfg():
