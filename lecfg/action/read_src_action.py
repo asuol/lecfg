@@ -31,6 +31,7 @@ from lecfg.action.action import Action
 from lecfg.action.action_cmd import ActionCmd
 from lecfg.action.action_exception import ActionException
 import subprocess
+import os
 
 
 class ReadSrcAction(Action):
@@ -38,7 +39,8 @@ class ReadSrcAction(Action):
     Action to call file reader on the src configuration file
     """
 
-    def __init__(self, name: str, action_cmd: ActionCmd):
+    def __init__(self, name: str, read_file_cmd: ActionCmd, read_dir_cmd:
+                 ActionCmd):
         """
         Constructor
 
@@ -46,15 +48,25 @@ class ReadSrcAction(Action):
         ----------
         name: str
             name of the action
-        action_cmd: ActionCmd
-            system command to open a file reader when the this action is run
+        read_file_cmd: ActionCmd
+            system command to open a file reader when this action is run
+            against a file
+        read_dir_cmd: ActionCmd
+            system command to list directory contents when this action is run
+            against a directory
         """
         super().__init__(name)
-        self.action_cmd = action_cmd
+        self._read_file_cmd = read_file_cmd
+        self._read_dir_cmd = read_dir_cmd
 
-    def _read_file(self, file_path: str):
+    def _read(self, file_path: str):
+        if os.path.isfile(file_path):
+            cmd = self._read_file_cmd
+        else:
+            cmd = self._read_dir_cmd
+
         try:
-            run_cmd = self.action_cmd.runnable_command([file_path])
+            run_cmd = cmd.runnable_command([file_path])
             subprocess.run(run_cmd, check=True,
                            stderr=subprocess.PIPE)
         except subprocess.CalledProcessError as e:
@@ -65,4 +77,4 @@ class ReadSrcAction(Action):
         return ActionResult.REPEAT
 
     def run(self, conf: Conf) -> ActionResult:
-        return self._read_file(conf.src_path)
+        return self._read(conf.src_path)

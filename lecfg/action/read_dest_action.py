@@ -36,7 +36,8 @@ class ReadDestAction(ReadSrcAction):
     Action to call file reader on the dest configuration file
     """
 
-    def __init__(self, name: str, action_cmd: ActionCmd):
+    def __init__(self, name: str, read_file_cmd: ActionCmd,
+                 read_dir_cmd: ActionCmd):
         """
         Constructor
 
@@ -44,11 +45,14 @@ class ReadDestAction(ReadSrcAction):
         ----------
         name: str
             name of the action
-        action_cmd: str
-            system command to open a file reader when the this action is run
+        read_file_cmd: ActionCmd
+            system command to open a file reader when this action is run
+            against a file
+        read_dir_cmd: ActionCmd
+            system command to list directory contents when this action is run
+            against a directory
         """
-        super().__init__(name, action_cmd)
-        self.action_cmd = action_cmd
+        super().__init__(name, read_file_cmd, read_dir_cmd)
 
     def run(self, conf: Conf) -> ActionResult:
-        return self._read_file(conf.dest_path)
+        return self._read(conf.dest_path)

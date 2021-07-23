@@ -38,6 +38,10 @@ Debian | grep "Debian" /etc/os-release
 Gentoo | -
 """
 
+DIR_PACKAGE_CONF = """
+dummy | - | - | %s/dummy | Dummy file
+"""
+
 MOCK_READ_CMD = "less"
 MOCK_CMP_CMD = "diff -u"
 
@@ -466,3 +470,28 @@ def test_error_save_and_exit(setup, create_dir, monkeypatch):
 
     assert file_exists(system_dir, ".vimrc") is True
     assert file_exists(system_dir, ".vimrc_work") is True
+
+
+def test_compare_file_and_dir(setup, create_dir, monkeypatch, capsys):
+    work_dir = setup("lecfg.systems", ONE_SYSTEM_CONF, parent_dir="work_dir")
+    system_dir = create_dir("SYSTEM")
+
+    # create "dummy" directory in the SYSTEM
+    create_dir(os.path.join(system_dir, "dummy"))
+
+    package_dir = os.path.join(work_dir, "dir_package")
+
+    setup("dummy", "", parent_dir=package_dir)
+
+    setup("README.lc", DIR_PACKAGE_CONF % system_dir, parent_dir=package_dir)
+
+    # Replace the "dummy" empty directory with the "dummy" empty file (the
+    # Compare action must be ommitted as we have a file and a directory)
+    monkeypatch.setattr('sys.stdin', io.StringIO('3'))
+
+    lecfg = Lecfg(work_dir)
+    lecfg.process()
+
+    capture = capsys.readouterr()
+
+    assert " Compare" not in capture.out

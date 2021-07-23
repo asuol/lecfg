@@ -51,12 +51,14 @@ import os
 
 READ_CMD_FILE = "read.cmd"
 COMPARE_CMD_FILE = "compare.cmd"
-
-READ_CMD_FILE_PARAM_CNT = 1
-CMP_CMD_FILE_PARAM_CNT = 2
+READ_DIR_CMD_FILE = "read_dir.cmd"
+COMPARE_DIR_CMD_FILE = "compare_dir.cmd"
 
 DEFAULT_READ_CMD = "less"
 DEFAULT_CMP_CMD = "diff -su"
+
+DEFAULT_READ_DIR_CMD = "ls -l"
+DEFAULT_CMP_DIR_CMD = "diff -sur"
 
 
 class Lecfg():
@@ -249,12 +251,35 @@ class Lecfg():
         try:
             for conf in package.configurations():
                 has_configuration = True
+
                 if(Path(conf.dest_path).exists()
                    or
                    Path(conf.dest_path).is_symlink()
                    ):
                     question = self._replace_question
-                    options = self._replace_options
+
+                    if (
+                        (
+                            Path(conf.dest_path).is_dir()
+                            and
+                            Path(conf.src_path).is_file()
+                        )
+                        or
+                        (
+                            Path(conf.dest_path).is_file()
+                            and
+                            Path(conf.src_path).is_dir()
+                        )
+                    ):
+                        # if the src and dest are not of the same type,
+                        # ommit the comparison action
+                        options = list(
+                            filter(lambda x: not isinstance(x, CompareAction),
+                                   self._replace_options
+                                   )
+                        )
+                    else:
+                        options = self._replace_options
                 elif Path(conf.dest_path).parent.exists():
                     question = self._deploy_question
                     options = self._deploy_options
@@ -294,8 +319,7 @@ class Lecfg():
 
         return None
 
-    def _read_cmd_conf(self, conf_file_name: str,
-                       file_param_count: int) -> ActionCmd:
+    def _read_cmd_conf(self, conf_file_name: str) -> ActionCmd:
         file_path = os.path.join(self.work_dir, conf_file_name)
 
         if os.path.exists(file_path):
@@ -305,7 +329,7 @@ class Lecfg():
                     print("%s file found, but it is empty. Ignoring..." %
                           conf_file_name)
                     return None
-            return ActionCmd(cmd, file_param_count)
+            return ActionCmd(cmd)
 
         return None
 
@@ -336,32 +360,43 @@ class Lecfg():
         current_system = self._select_system(sys_parser)
         print("\nCurrent system: [ %s ]\n" % current_system)
 
-        read_cmd = self._read_cmd_conf(READ_CMD_FILE, READ_CMD_FILE_PARAM_CNT)
-        compare_cmd = self._read_cmd_conf(COMPARE_CMD_FILE,
-                                          CMP_CMD_FILE_PARAM_CNT)
+        read_cmd = self._read_cmd_conf(READ_CMD_FILE)
+        read_dir_cmd = self._read_cmd_conf(READ_DIR_CMD_FILE)
+        compare_cmd = self._read_cmd_conf(COMPARE_CMD_FILE)
+        compare_dir_cmd = self._read_cmd_conf(COMPARE_DIR_CMD_FILE)
 
         if read_cmd is None:
-            read_cmd = ActionCmd(DEFAULT_READ_CMD, READ_CMD_FILE_PARAM_CNT)
+            read_cmd = ActionCmd(DEFAULT_READ_CMD)
+
+        if read_dir_cmd is None:
+            read_dir_cmd = ActionCmd(DEFAULT_READ_DIR_CMD)
 
         if compare_cmd is None:
-            compare_cmd = ActionCmd(DEFAULT_CMP_CMD, CMP_CMD_FILE_PARAM_CNT)
+            compare_cmd = ActionCmd(DEFAULT_CMP_CMD)
 
-        self._replace_options = [ReadSrcAction("Read src", read_cmd),
-                                 ReadDestAction("Read dest", read_cmd),
-                                 CompareAction("Compare", compare_cmd),
+        if compare_dir_cmd is None:
+            compare_dir_cmd = ActionCmd(DEFAULT_CMP_DIR_CMD)
+
+        self._replace_options = [ReadSrcAction("Read src", read_cmd,
+                                               read_dir_cmd),
+                                 ReadDestAction("Read dest", read_cmd,
+                                                read_dir_cmd),
+                                 CompareAction("Compare", compare_cmd,
+                                               compare_dir_cmd),
                                  ReplaceAction("Replace"),
                                  NextAction("Skip"),
                                  NextPackage("Skip to next package"),
                                  SaveExitAction("Save & exit")]
 
-        self._deploy_options = [ReadSrcAction("Read src", read_cmd),
+        self._deploy_options = [ReadSrcAction("Read src", read_cmd,
+                                              read_dir_cmd),
                                 DeployAction("Deploy"),
                                 NextAction("Skip"),
                                 NextPackage("Skip to next package"),
                                 SaveExitAction("Save & exit")]
 
         self._no_parent_deploy_options = [
-            ReadSrcAction("Read src", read_cmd),
+            ReadSrcAction("Read src", read_cmd, read_dir_cmd),
             NoParentDeployAction("Create dest directory and deploy"),
             NextAction("Skip"),
             NextPackage("Skip to next package"),

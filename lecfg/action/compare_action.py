@@ -31,6 +31,7 @@ from lecfg.action.action import Action
 from lecfg.action.action_cmd import ActionCmd
 from lecfg.action.action_exception import ActionException
 import subprocess
+import os
 
 
 class CompareAction(Action):
@@ -38,7 +39,8 @@ class CompareAction(Action):
     Action to call diff utility to compare the src and dest configuration files
     """
 
-    def __init__(self, name: str, action_cmd: ActionCmd):
+    def __init__(self, name: str, cmp_file_cmd: ActionCmd,
+                 cmp_dir_cmd: ActionCmd):
         """
         Constructor
 
@@ -46,16 +48,26 @@ class CompareAction(Action):
         ----------
         name: str
             name of the action
-        action_cmd: str
-            system command to open a file reader when the this action is run
+        cmp_file_cmd: ActionCmd
+            system command to compare file contents when this action is run
+            against two files
+        cmp_dir_cmd: ActionCmd
+            system command to compare directory contents when this action isi
+            run against two directories
         """
         super().__init__(name)
-        self.action_cmd = action_cmd
+        self._cmp_file_cmd = cmp_file_cmd
+        self._cmp_dir_cmd = cmp_dir_cmd
 
     def run(self, conf: Conf) -> ActionResult:
+        if os.path.isfile(conf.src_path) and os.path.isfile(conf.dest_path):
+            cmd = self._cmp_file_cmd
+        elif os.path.isdir(conf.src_path) and os.path.isdir(conf.dest_path):
+            cmd = self._cmp_dir_cmd
+
         try:
-            run_cmd = self.action_cmd.runnable_command([conf.dest_path,
-                                                        conf.src_path])
+            run_cmd = cmd.runnable_command([conf.dest_path,
+                                            conf.src_path])
             subprocess.run(run_cmd,
                            check=True, stderr=subprocess.PIPE)
         except subprocess.CalledProcessError as e:

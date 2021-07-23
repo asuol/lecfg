@@ -32,7 +32,7 @@ class ActionCmd():
     Action command
     """
 
-    def __init__(self, cmd: str, file_param_count: int):
+    def __init__(self, cmd: str):
         """
         Constructor
 
@@ -40,13 +40,8 @@ class ActionCmd():
         ----------
         cmd: List[str]
             system command with parameters
-        file_param_count: int
-            number of file parameters to be received by the system command
-            after the system command parameters
-
         """
         self.cmd = cmd.split(" ")
-        self.file_param_count = file_param_count
 
     def runnable_command(self, file_params: List[str]) -> List[str]:
         """
@@ -60,14 +55,7 @@ class ActionCmd():
         Returns
         -------
         A complete runnable command
-
-        Raises
-        ------
-        AssertionError
-            Raised if the number of provided file parameters does not match the
-            expected number configured for the system command
         """
-        assert(len(file_params) == self.file_param_count)
 
         run_cmd = self.cmd.copy()
         run_cmd.extend(file_params)
