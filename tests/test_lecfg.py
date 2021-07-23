@@ -399,6 +399,8 @@ def test_skip_package(setup, create_dir, monkeypatch):
           parent_dir=dummy_package_dir)
 
     setup(".vimrc", "", parent_dir=dummy_package_dir)
+    setup(".vimrc_gentoo", "", parent_dir=dummy_package_dir)
+    setup(".vimrc_work", "", parent_dir=dummy_package_dir)
 
     package_dir = os.path.join(work_dir, "vim")
 
@@ -442,11 +444,17 @@ def test_error_save_and_exit(setup, create_dir, monkeypatch):
     setup("README.lc", CORRECTED_PACKAGE_CONF % system_dir,
           parent_dir=package_dir)
 
+    setup(".vimrc", "", parent_dir=package_dir)
+
     vim_dir = os.path.join(work_dir, "vim")
 
     setup("README.lc",
           TEST_PACKAGE_CONF % (system_dir, system_dir, system_dir),
           parent_dir=vim_dir)
+
+    setup(".vimrc", "", parent_dir=vim_dir)
+    setup(".vimrc_gentoo", "", parent_dir=vim_dir)
+    setup(".vimrc_work", "", parent_dir=vim_dir)
 
     # load the previous session and deploy the corrected file, and
     # replace the corrected file with the one from the "vim" package, and

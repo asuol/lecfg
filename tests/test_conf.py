@@ -7,17 +7,22 @@ import pytest
 
 TEST_PACKAGE_CONF = """
 # README.lc
-.vimrc |  - |  - | ~/.vimrc | Vim Configuration
-.vimrc_gentoo | 8.0 | Gentoo | ~/.vimrc | Vim Configuration
+.vimrc |  - |  - | /tmp/.vimrc | Vim Configuration
+.vimrc_gentoo | 8.0 | Gentoo | /tmp/.vimrc | Vim Configuration
 
-.vimrc_work | 8.0 | Debian,Gentoo | ~/.vimrc | Vim configuration """
+.vimrc_work | 8.0 | Debian,Gentoo | /tmp/.vimrc | Vim configuration """
 
 TEST_PACKAGE_ERROR_CONF = TEST_PACKAGE_CONF + """
-.vimrc || - | ~.vimrc """
+.vimrc || - | /tmp/.vimrc """
 
 
 def test_parse(setup):
     package_dir = setup("README.lc", TEST_PACKAGE_CONF)
+
+    # setup package dir
+    setup(".vimrc", "", parent_dir=package_dir)
+    setup(".vimrc_gentoo", "", parent_dir=package_dir)
+    setup(".vimrc_work", "", parent_dir=package_dir)
 
     vim_package = PackageParser(package_dir, "Debian")
 
@@ -31,6 +36,11 @@ def test_parse(setup):
 
 def test_parse_error(setup):
     package_dir = setup("README.lc", TEST_PACKAGE_ERROR_CONF)
+
+    # setup package dir
+    setup(".vimrc", "", parent_dir=package_dir)
+    setup(".vimrc_gentoo", "", parent_dir=package_dir)
+    setup(".vimrc_work", "", parent_dir=package_dir)
 
     vim_package = PackageParser(package_dir, "Debian")
 
